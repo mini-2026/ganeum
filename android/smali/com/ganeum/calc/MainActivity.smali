@@ -63,13 +63,13 @@
 
     move-result-object v2
 
-    const-string v4, "/dlsdml99-create/ganeum"
+    const-string v4, "/mini-2026/ganeum"
 
     filled-new-array {v3, v4}, [Ljava/lang/String;
 
     move-result-object v3
 
-    const-string v4, "dlsdml99-create.github.io"
+    const-string v4, "mini-2026.github.io"
 
     const-string v5, "/ganeum/"
 

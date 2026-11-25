@@ -53,7 +53,7 @@
     const-string v4, "window.onLatestFail&&window.onLatestFail()"
 
     :try_start_0
-    const-string v5, "https://api.github.com/repos/dlsdml99-create/ganeum/releases/latest"
+    const-string v5, "https://api.github.com/repos/mini-2026/ganeum/releases/latest"
 
     invoke-static {v5}, Lcom/ganeum/calc/MainActivity;->c(Ljava/lang/String;)Ljava/lang/String;
 
@@ -135,7 +135,7 @@
 
     if-eqz v5, :cond_2
 
-    const-string v5, "https://github.com/dlsdml99-create/ganeum/releases/download/"
+    const-string v5, "https://github.com/mini-2026/ganeum/releases/download/"
 
     invoke-virtual {v6, v5}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
 

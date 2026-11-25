@@ -7,7 +7,7 @@
 const NATIVE = typeof window.Android === 'object' && window.Android ? window.Android : null;
 /* 웹앱을 만들 때 빌드 번호(예: 1.10)가 여기에 들어가요. 앱(APK)은 폰에 설치된 버전 번호를 써요 */
 const BUILD = '';
-const APP = { name: '가늠', version: '', label: '', repo: 'dlsdml99-create/ganeum', preview: !NATIVE && !/github\.io$/.test(location.hostname), shareBase: 'https://dlsdml99-create.github.io/ganeum/' };
+const APP = { name: '가늠', version: '', label: '', repo: 'mini-2026/ganeum', preview: !NATIVE && !/github\.io$/.test(location.hostname), shareBase: 'https://mini-2026.github.io/ganeum/' };
 APP.web = !NATIVE && !APP.preview;
 /* 아이폰 웹앱: 한 번 열면 인터넷 없이도 열리게 (같은 주소의 다른 앱 저장분은 건드리지 않는 sw.js) */
 if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/ganeum\//.test(location.pathname)) {

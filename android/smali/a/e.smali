@@ -42,7 +42,7 @@
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     .line 1
-    const-string p2, "https://dlsdml99-create.github.io/ganeum/#updates"
+    const-string p2, "https://mini-2026.github.io/ganeum/#updates"
 
     invoke-static {p2}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
 
@@ -92,7 +92,7 @@
 
     move-result-object v0
 
-    const-string v1, "/dlsdml99-create/ganeum/releases/download/"
+    const-string v1, "/mini-2026/ganeum/releases/download/"
 
     invoke-virtual {v0, v1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
 

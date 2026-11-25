@@ -1,0 +1,16 @@
+{
+ "name": "가늠",
+ "apk": "ganeum.apk",
+ "tag": "code",
+ "web": true,
+ "webroot": "assets",
+ "intro": [
+  "여러 나라 돈을 바로 환율로 바꿔 계산해요.",
+  "자주 쓰는 계산식을 저장해 두고 한 번에 불러와요.",
+  "식 중간을 눌러 바로 고칠 수 있어요."
+ ],
+ "redirects": [
+  "guide.html",
+  "app.html"
+ ]
+}
