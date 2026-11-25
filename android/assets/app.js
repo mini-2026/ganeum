@@ -14,6 +14,9 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.19', d: '2026.11.25', items: [
+    "⛽ 주유하면 몇 km: 계산기 아래 '⛽ 주유하면 몇 km'를 누르고 넣을 금액과 기름값(휘발유 1L 가격)을 넣으면, 계기판 거리가 몇 km 늘어날지 바로 나와요 (예: 4만 원·1,790원 → 약 304km). 자주 쓰는 계산에 '갈 거리 → 주유 금액'과 '계기판으로 연비 구하기'도 있어요. 구한 연비와 기름값은 주유 계산에 저절로 들어가요"
+  ] },
   { v: 'v1.18', d: '2026.11.20', items: [
     "📝 적던 글 지키기: 글을 적다가 앱이 꺼져도 사라지지 않아요. 다시 열어 같은 칸을 열면 적던 글이 그대로 이어져요 (필요 없으면 '버리기'를 눌러 주세요)",
   ] },
@@ -495,6 +498,8 @@ function tzCode() {
   return [tz, c || ''];
 }
 
+/* 주유 계산: 기름값을 매번 보고 넣는 계산은 바로 창을 열고, 결과에 단위를 붙여요 */
+const BUILTIN_ASK = { 'b-fuel': 'km', 'b-fuel2': '원', 'b-eff': 'km/L' };
 const BUILTIN = [
   { id: 'b-vat', name: '부가세 포함', f: '금액 × 1.1', pin: true },
   { id: 'b-net', name: '부가세 빼기', f: '금액 ÷ 1.1', pin: true, note: '부가세 10%를 뺀 공급가액' },
@@ -505,8 +510,12 @@ const BUILTIN = [
   { id: 'b-chg', name: '증감률 %', f: '(이후 − 이전) ÷ 이전 × 100', order: ['이전', '이후'], pin: false, note: '이전 값보다 몇 % 오르거나 내렸는지' },
   { id: 'b-unit', name: '100g당 가격', f: '가격 ÷ 용량 × 100', vals: { '용량': 500 }, chip: '100g당 ({용량}g)', pin: false, note: 'ml로 넣어도 똑같이 계산돼요' },
   { id: 'b-tip', name: '팁 포함', f: '금액 × (1 + 팁 ÷ 100)', vals: { '팁': 15 }, chip: '팁 {팁}%', pin: false },
-  { id: 'b-int', dp: 0, name: '예금 이자', f: '원금 × 연이율 ÷ 100 × 개월 ÷ 12 × 0.846', vals: { '연이율': 3, '개월': 12 }, chip: '이자 {연이율}% {개월}개월', pin: false, note: '단리, 이자소득세 15.4%를 뺀 금액' }
+  { id: 'b-int', dp: 0, name: '예금 이자', f: '원금 × 연이율 ÷ 100 × 개월 ÷ 12 × 0.846', vals: { '연이율': 3, '개월': 12 }, chip: '이자 {연이율}% {개월}개월', pin: false, note: '단리, 이자소득세 15.4%를 뺀 금액' },
+  { id: 'b-fuel', dp: 0, name: '주유하면 몇 km 늘어날까', f: '금액 ÷ 기름값 × 연비', vals: { '기름값': 1790, '연비': 13.6 }, chip: '⛽ 주유하면 몇 km', pin: true, note: '기름값(휘발유 1L 가격)과 넣을 금액을 넣으면 계기판 거리가 몇 km 늘어날지 나와요. 기름값·연비는 한 번 고치면 기억해요' },
+  { id: 'b-fuel2', dp: 0, name: '갈 거리 → 주유 금액', f: '거리 ÷ 연비 × 기름값', order: ['거리', '기름값', '연비'], vals: { '기름값': 1790, '연비': 13.6 }, chip: '⛽ 얼마 넣지', pin: false, note: '갈 거리(km)를 넣으면 넣어야 할 금액(원)이 나와요' },
+  { id: 'b-eff', dp: 1, name: '계기판으로 연비 구하기', f: '(주유후 − 주유전) ÷ (금액 ÷ 기름값)', order: ['주유전', '주유후', '금액', '기름값'], vals: { '기름값': 1790 }, pin: false, note: '주유 전·후 계기판의 갈 수 있는 거리(km)와 넣은 금액을 넣으면 연비(km/L)가 나와요. 구한 연비는 주유 계산에 저절로 들어가요' }
 ];
+const FUEL_IDS = ['b-fuel', 'b-fuel2', 'b-eff'];
 
 /* ───── 프리셋 묶음 (눌러서 한 번에 넣기) ───── */
 const PACKS = [
@@ -577,7 +586,7 @@ function defaults() {
     fx: { list: ['KRW', 'USD', 'JPY', 'EUR', 'CNY'], active: 'USD', expr: '', done: false },
     cx: { on: true, from: 'KRW', to: 'USD' },
     rates: { r: clone(RATE_SNAPSHOT.r), at: RATE_SNAPSHOT.at, src: RATE_SNAPSHOT.src, got: 0 },
-    presets: clone(BUILTIN), learned: {}, hist: [], fxHist: [], tz: '', upd: 0
+    presets: clone(BUILTIN), learned: {}, hist: [], fxHist: [], tz: '', upd: 0, bi: 2
   };
 }
 const HIST_MAX = 200;
@@ -610,6 +619,8 @@ function load() {
     if (typeof s.tz === 'string') o.tz = s.tz.slice(0, 60);
     o.presets.forEach(p => { if (p.id === 'b-py' && p.name === '평 → ㎡') p.name = '평 → 제곱미터'; if (p.id === 'b-m2' && p.name === '㎡ → 평') p.name = '제곱미터 → 평'; });
     if (typeof s.upd === 'number') o.upd = s.upd;
+    /* 새로 생긴 기본 계산식(주유)은 기존 사용자에게 한 번만 넣어요. 지운 뒤엔 다시 넣지 않아요 */
+    if (!(s.bi >= 2) && o.presets.length < 100) BUILTIN.forEach(b => { if (FUEL_IDS.includes(b.id) && !o.presets.find(p => p.id === b.id)) o.presets.push(clone(b)); });
     if (o.calc.expr === '38700' && o.calc.prev && o.calc.prev.e === '12900*3') o.calc = { expr: '', done: false, prev: null };
     if (o.fx.expr === '100' && o.fx.done && o.fx.active === 'USD') { o.fx.expr = ''; o.fx.done = false; }
   } catch (e) { return defaults(); }
@@ -814,6 +825,7 @@ function chipTap(btn) {
   if (!p) return;
   const info = presetInfo(p);
   if (info.err) return sheetPresetEdit(p);
+  if (BUILTIN_ASK[p.id]) return sheetPresetCalc(p, x);
   const vals = Object.assign({}, p.vals);
   /* 나머지 값이 다 채워져 있으면 창 없이 바로 계산 (값은 알림의 '값 바꾸기'로 고침) */
   if (info.secondary.some(v => typeof vals[v] !== 'number')) return sheetPresetCalc(p, x);
@@ -1119,7 +1131,7 @@ function sheetPresetCalc(p, x0) {
         try { cur[inp.dataset.var] = calc(raw); } catch (e) { bad = bad || `${name}: ${e.message}`; }
       });
       if (!bad) { try { result = presetRound(p, calc(p.f, cur)); } catch (e) { bad = e.message; } }
-      if (bad) { result = null; out.textContent = bad; out.className = 'bad'; } else { out.textContent = fmt(result); out.className = ''; }
+      if (bad) { result = null; out.textContent = bad; out.className = 'bad'; } else { out.textContent = fmt(result) + (BUILTIN_ASK[p.id] ? ' ' + BUILTIN_ASK[p.id] : ''); out.className = ''; }
     };
     inputs.forEach(i => i.addEventListener('input', upd));
     upd();
@@ -1127,6 +1139,13 @@ function sheetPresetCalc(p, x0) {
       if (result == null) { const empty = inputs.find(i => !i.value.trim()); if (empty) empty.focus(); return; }
       /* 미리 채워 둔 값(할인율·인원·배송비 등)만 이번 값으로 기억. 계산기 숫자나 매번 넣는 값은 기억하지 않아요 */
       info.secondary.forEach(v => { if (p.vals && typeof p.vals[v] === 'number') p.vals[v] = cur[v]; });
+      /* 주유 계산끼리 기름값을 맞추고, 계기판으로 구한 연비는 다른 주유 계산에 넣어요 */
+      if (BUILTIN_ASK[p.id]) S.presets.forEach(q => {
+        if (q === p || !BUILTIN_ASK[q.id] || !q.vals) return;
+        if (cur['기름값'] > 0 && typeof q.vals['기름값'] === 'number') q.vals['기름값'] = cur['기름값'];
+        if (p.id === 'b-eff' && result > 0 && result < 60 && typeof q.vals['연비'] === 'number') q.vals['연비'] = result;
+      });
+      if (p.id === 'b-eff' && result > 0 && result < 60) setTimeout(() => toast('연비 ' + fmt(result) + 'km/L를 주유 계산에 넣었어요'), 400);
       const label = recLabel(p, cur), r = result;
       closeSheet();
       if (fromPreset) S.tab = 'calc';
