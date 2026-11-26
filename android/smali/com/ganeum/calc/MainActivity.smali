@@ -707,7 +707,7 @@
 
     invoke-virtual {v1, p1, p2}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
 
-    const-string p1, " \uc5c5\ub370\uc774\ud2b8\uac00 \ub098\uc654\uc5b4\uc694.\n\'\uc5c5\ub370\uc774\ud2b8\'\ub97c \ub204\ub974\uba74 \ud30c\uc77c\uc774 \ubc1b\uc544\uc838\uc694. \ub2e4 \ubc1b\uc73c\uba74 \ud30c\uc77c\uc744 \ub20c\ub7ec \uc124\uce58\ud574 \uc8fc\uc138\uc694. \uacc4\uc0b0 \uae30\ub85d\uacfc \uacc4\uc0b0\uc2dd\uc740 \uadf8\ub300\ub85c \ub0a8\uc544\uc694."
+    const-string p1, " \uc5c5\ub370\uc774\ud2b8\uac00 \ub098\uc654\uc5b4\uc694.\n\'\uc5c5\ub370\uc774\ud2b8\'\ub97c \ub204\ub974\uba74 \uc571 \uc548\uc5d0\uc11c \uc0c8 \ubc84\uc804\uc744 \ubc1b\uace0 \uc124\uce58 \ud654\uba74\uc744 \uc5f4\uc5b4\uc694. \uacc4\uc0b0 \uae30\ub85d\uacfc \uacc4\uc0b0\uc2dd\uc740 \uadf8\ub300\ub85c \ub0a8\uc544\uc694."
 
     invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -908,6 +908,8 @@
 
     invoke-super {p0, p1, p2, p3}, Landroid/app/Activity;->onActivityResult(IILandroid/content/Intent;)V
 
+    invoke-static {p0, p1}, Lupd/U;->onResult(Landroid/app/Activity;I)V
+
     const/16 v0, 0x1c85
 
     if-eq p1, v0, :cond_0
@@ -1044,6 +1046,8 @@
     .locals 3
 
     invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
+
+    invoke-static {p0}, Lupd/U;->clean(Landroid/content/Context;)V
 
     invoke-virtual {p0}, Lcom/ganeum/calc/MainActivity;->g()V
 

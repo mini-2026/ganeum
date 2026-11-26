@@ -52,6 +52,16 @@
     invoke-virtual {v1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     .line 1
+    invoke-static {v1, v2}, Lupd/U;->size(Landroid/content/Context;Landroid/net/Uri;)J
+
+    move-result-wide v3
+
+    const-wide/32 v5, 0x500000
+
+    cmp-long v5, v3, v5
+
+    if-lez v5, :big_known
+
     :try_start_0
     invoke-virtual {v1}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
 
@@ -94,13 +104,11 @@
     goto :goto_0
 
     :cond_0
-    new-instance v3, Ljava/io/IOException;
+    invoke-virtual {v2}, Ljava/io/InputStream;->close()V
 
-    const-string v4, "too big"
+    const-wide/16 v3, -0x1
 
-    invoke-direct {v3, v4}, Ljava/io/IOException;-><init>(Ljava/lang/String;)V
-
-    throw v3
+    goto :big_known
 
     :catchall_0
     move-exception v3
@@ -161,9 +169,32 @@
 
     if-nez v0, :cond_3
 
-    const-string v0, "null"
+    const-string v0, "window.AppInfo&&AppInfo.backupOpenFail&&AppInfo.backupOpenFail('read',0)"
 
-    goto :goto_4
+    invoke-virtual {v1, v0}, Lcom/ganeum/calc/MainActivity;->e(Ljava/lang/String;)V
+
+    return-void
+
+    :big_known
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    const-string v2, "window.AppInfo&&AppInfo.backupOpenFail&&AppInfo.backupOpenFail('big',"
+
+    invoke-direct {v0, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+
+    invoke-virtual {v0, v3, v4}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+
+    const-string v2, ")"
+
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {v1, v0}, Lcom/ganeum/calc/MainActivity;->e(Ljava/lang/String;)V
+
+    return-void
 
     :cond_3
     invoke-static {v0}, Lorg/json/JSONObject;->quote(Ljava/lang/String;)Ljava/lang/String;
