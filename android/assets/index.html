@@ -209,7 +209,7 @@ input{font:inherit;color:inherit;margin:0}
 .suggest b{font-family:var(--num);font-size:16px}
 .suggest span{font-size:14px;color:var(--ink-2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.cchip{height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;border:1px solid var(--line);font-family:var(--num);font-size:14px;font-weight:700}
+.cchip{height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;border:1px solid var(--line);font-family:var(--num);font-size:14px;font-weight:700}
 .cchip[aria-pressed="true"]{background:var(--jade);border-color:var(--jade);color:var(--on-jade)}
 .switch{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;font-size:15px;font-weight:600;text-align:left}
 .switch i{position:relative;flex:none;width:46px;height:28px;border-radius:999px;background:var(--line);transition:background-color .15s}
@@ -318,7 +318,7 @@ input{font:inherit;color:inherit;margin:0}
         <h1>계산식</h1>
         <button class="btn pri sm" id="newPreset" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>새 계산식</button>
       </header>
-      <input class="qbox" id="pQ" type="search" placeholder="찾기 (이름이나 계산식, 여러 단어 가능)" autocomplete="off" aria-label="계산식 찾기">
+      <input class="qbox" id="pQ" type="search" placeholder="이름이나 계산식으로 찾기" autocomplete="off" aria-label="계산식 찾기">
       <div class="plist" id="plist"></div>
     </section>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
