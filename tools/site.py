@@ -66,7 +66,7 @@ upd = ''.join(
     + ''.join(f'<li>{e(str(i))}</li>' for i in (n.get('items') or [])) + '</ul></div>'
     for n in notes) or '<p>업데이트 내용은 앱 안 왼쪽 아래 버전을 눌러 볼 수 있어요.</p>'
 privacy = ''.join(f'<li>{e(x)}</li>' for x in about.get('privacy') or ['입력한 내용은 내 휴대폰에만 저장돼요. 따로 모으거나 보내지 않아요.'])
-web = (f'<a class="b2" href="app/">📱 아이폰·웹에서 열기</a>' if about.get('web') else '')
+web = (f'<a class="b2" href="app/">🌐 웹페이지</a>' if about.get('web') else '')
 
 page = f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -108,7 +108,7 @@ if share:
     open(os.path.join(out, 'p.html'), 'w', encoding='utf-8').write(head + f'''<h1>{e(about["name"])} 계산식</h1>
 <p id="msg">계산식을 여는 중이에요…</p>
 <a class="p" id="openApp" href="#">📱 앱에서 열기</a>
-<a id="openWeb" href="app/">🌐 웹에서 열기 (아이폰)</a>
+<a id="openWeb" href="app/">🌐 웹페이지에서 열기</a>
 <a href="./">⬇️ 앱 받기</a>
 <script src="p.js"></script></main></body></html>''')
     open(os.path.join(out, 'p.js'), 'w', encoding='utf-8').write('''(function () {
