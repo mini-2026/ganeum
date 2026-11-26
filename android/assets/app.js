@@ -14,6 +14,10 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.23', d: '2026.11.26', items: [
+    '🔤 계산식 묶음의 마일·갤런을 mi·gal로, 해외 단위 설명을 °F·mi·lb로 바꿨어요',
+    "✏️ 저장한 뒤에는 '적던 글이 남아 있어요' 알림이 다시 뜨지 않아요"
+  ] },
   { v: 'v1.22', d: '2026.11.26', items: [
     '✅ 앱 안에서 새 버전 받기가 잘 되는지 확인하는 버전이에요. 이 버전부터는 버전 정보 창에서 바로 받아서 설치할 수 있어요'
   ] },
@@ -75,7 +79,7 @@ const NOTES = [
     '0으로 나눈 뒤 숫자를 누르면 새 계산으로 시작해요. 음수는 −5처럼 보여요. 저장 공간이 부족해 저장하지 못하면 알려 드려요'
   ] },
   { v: 'v1.9', d: '2026.11.05', items: ['보안 강화: 앱 화면이 허락된 곳 말고는 스크립트를 불러오지 못하게 막고, 폰의 다른 파일을 읽지 못하게 하고, 업데이트 파일은 이 앱 저장소 주소에서만 받아요'] },
-  { v: 'v1.8', d: '2026.11.05', items: ['계산식 묶음 「한국 단위」: 근↔g(고기 600g·채소 375g), 돈↔g, cm→인치, km→마일, kg→파운드', '왼쪽 아래 버전 → 화면: 밝게·어둡게 직접 고르기, 글자 크게·아주 크게'] },
+  { v: 'v1.8', d: '2026.11.05', items: ['계산식 묶음 「한국 단위」: 근↔g(고기 600g·채소 375g), 돈↔g, cm→인치, km→mi, kg→파운드', '왼쪽 아래 버전 → 화면: 밝게·어둡게 직접 고르기, 글자 크게·아주 크게'] },
   { v: 'v1.7', d: '2026.11.05', items: ['내 기록 백업: 계산 기록·계산식·통화 목록을 파일로 저장했다가 새 폰에서 불러오기 (왼쪽 아래 버전)'] },
   { v: 'v1.6', d: '2026.11.01', items: ['환율 탭에도 복사 버튼: "100 USD = 133,804원 = 15,788 JPY"처럼 한 번에 복사'] },
   { v: 'v1.5', d: '2026.11.01', items: ['16자리가 넘는 아주 큰 수도 끝자리까지 정확하게 계산해요 (99,999,999×99,999,999 = 9,999,999,800,000,001)', '계산 기록을 길게 누르면 그 계산을 계산식으로 바로 저장해요'] },
@@ -540,14 +544,14 @@ const FUEL_IDS = ['b-fuel', 'b-fuel2', 'b-eff'];
 
 /* ───── 프리셋 묶음 (눌러서 한 번에 넣기) ───── */
 const PACKS = [
-  { id: 'trip', name: '여행', desc: '화씨·마일·파운드 같은 해외 단위', items: [
+  { id: 'trip', name: '여행', desc: '°F·mi·lb 같은 해외 단위', items: [
     { id: 'k-f2c', name: '화씨 → 섭씨', f: '(화씨 − 32) × 5 ÷ 9' },
     { id: 'k-c2f', name: '섭씨 → 화씨', f: '섭씨 × 9 ÷ 5 + 32' },
-    { id: 'k-mi', name: '마일 → km', f: '마일 × 1.609344' },
+    { id: 'k-mi', name: 'mi → km', f: 'mi × 1.609344' },
     { id: 'k-lb', name: '파운드 → kg', f: '파운드 × 0.45359237' },
     { id: 'k-oz', name: '온스 → g', f: '온스 × 28.349523' },
     { id: 'k-in', name: '인치 → cm', f: '인치 × 2.54' },
-    { id: 'k-gal', name: '갤런 → L', f: '갤런 × 3.785412', note: '미국 갤런 기준' }
+    { id: 'k-gal', name: 'gal → L', f: 'gal × 3.785412', note: '미국 gal 기준' }
   ] },
   { id: 'unit', name: '한국 단위', desc: '근·돈·평·인치를 g·㎡·cm로, 거꾸로도', items: [
     { id: 'k-geun', name: '근 → g (고기)', f: '근 × 600', note: '고기 한 근 = 600g' },
@@ -556,7 +560,7 @@ const PACKS = [
     { id: 'k-don', name: '돈 → g (금)', f: '돈 × 3.75', note: '금 한 돈 = 3.75g' },
     { id: 'k-g2don', name: 'g → 돈 (금)', f: '그램 ÷ 3.75' },
     { id: 'k-cm2in', name: 'cm → 인치', f: '센티 ÷ 2.54', note: 'TV·모니터·바지 사이즈' },
-    { id: 'k-km2mi', name: 'km → 마일', f: '킬로미터 ÷ 1.609344' },
+    { id: 'k-km2mi', name: 'km → mi', f: 'km ÷ 1.609344' },
     { id: 'k-kg2lb', name: 'kg → 파운드', f: '킬로그램 ÷ 0.45359237' }
   ] },
   { id: 'shop', name: '쇼핑', desc: '개당 가격, 할인에 추가 할인', items: [
@@ -2126,7 +2130,7 @@ if (INAPP) { let w = 0; try { w = +localStorage.getItem(UPD_KEY) || 0; } catch (
     var ch = false, k, el;
     for (k in live) {
       el = find(k);
-      if (!el || !el.value.trim()) { delete live[k]; ch = true; }
+      if (!el || !el.value.trim() || !el.getClientRects().length) { delete live[k]; ch = true; } // 창이 닫혀 칸이 숨겨져도 지워요
       else if (el.value !== live[k].v) { live[k] = { v: el.value.slice(0, MAXLEN), t: Date.now() }; ch = true; }
     }
     if (ch) save();
@@ -2147,7 +2151,7 @@ if (INAPP) { let w = 0; try { w = +localStorage.getItem(UPD_KEY) || 0; } catch (
     if (tw && tw.parentNode) tw.parentNode.removeChild(tw);
     tw = document.createElement('div');
     tw.setAttribute('role', 'status');
-    tw.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483000;max-width:min(92vw,420px);box-sizing:border-box;padding:10px 12px 10px 14px;border-radius:14px;background:rgba(32,32,36,.94);color:#fff;font:14px/1.45 system-ui,-apple-system,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25)';
+    tw.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483000;width:min(92vw,420px);max-width:min(92vw,420px);box-sizing:border-box;padding:10px 12px 10px 14px;border-radius:14px;background:rgba(32,32,36,.94);color:#fff;font:14px/1.45 system-ui,-apple-system,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25)';
     var sp = document.createElement('span'); sp.textContent = msg; sp.style.flex = '1'; tw.appendChild(sp);
     if (btn) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = btn;
