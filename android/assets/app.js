@@ -14,6 +14,9 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.22', d: '2026.11.26', items: [
+    '✅ 앱 안에서 새 버전 받기가 잘 되는지 확인하는 버전이에요. 이 버전부터는 버전 정보 창에서 바로 받아서 설치할 수 있어요'
+  ] },
   { v: 'v1.21', d: '2026.11.26', items: [
     "⬇️ 새 버전을 앱 안에서 바로 받아요. 버전 정보 창에서 '업데이트 받기'를 누르면 받는 정도(%)가 보이고, 다 받으면 설치 화면이 열려요. 받은 파일은 앱을 다시 열 때 저절로 지워져서 폰에 쌓이지 않아요",
     '🔒 받은 파일이 가늠에서 만든 진짜 새 버전인지 확인한 뒤에만 설치해요',
