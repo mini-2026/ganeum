@@ -14,8 +14,16 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.20', d: '2026.11.26', items: [
+    '🛟 계산식을 100개 넘게 저장하면 다시 열 때 101번째부터 사라지던 문제를 고쳤어요. 이제 500개까지 저장되고, 꽉 차면 미리 알려 드려요',
+    '🔗 공유한 계산식 링크가 열리지 않던 문제를 고쳤어요. 앱이 있으면 앱에서, 아이폰은 웹에서 바로 열려요',
+    '💱 환율 탭 최근 환산에 지우기 버튼이 생겼어요. 환율이 3일 넘게 지난 값이면 알려 드려요',
+    '👓 버튼과 글씨를 더 크게 키웠어요. 글자 아주 크게에서도 환율 목록과 결과가 화면에 잘 보여요',
+    "🔔 새 버전 알림을 밝은 화면에서도 잘 보이게 바꿨어요. 아래 탭 이름은 '계산식'으로 짧게 바꿨어요",
+    '🔢 아주 큰 수는 1e45 대신 1 × 10⁴⁵처럼 보여 줘요'
+  ] },
   { v: 'v1.19', d: '2026.11.25', items: [
-    "⛽ 주유하면 몇 km: 계산기 아래 '⛽ 주유하면 몇 km'를 누르고 넣을 금액과 기름값(휘발유 1L 가격)을 넣으면, 계기판 거리가 몇 km 늘어날지 바로 나와요 (예: 4만 원·1,790원 → 약 304km). 자주 쓰는 계산에 '갈 거리 → 주유 금액'과 '계기판으로 연비 구하기'도 있어요. 구한 연비와 기름값은 주유 계산에 저절로 들어가요"
+    "⛽ 주유하면 몇 km: 계산기 아래 '⛽ 주유하면 몇 km'를 누르고 주유할 금액과 기름값(1L 가격)을 넣으면, 계기판 거리가 몇 km 늘어날지 바로 나와요 (예: 4만 원·1,790원 → 약 304km). 자주 쓰는 계산에 '갈 거리 → 주유 금액'과 '계기판으로 연비 구하기'도 있어요. 구한 연비와 기름값은 주유 계산에 저절로 들어가요"
   ] },
   { v: 'v1.18', d: '2026.11.20', items: [
     "📝 적던 글 지키기: 글을 적다가 앱이 꺼져도 사라지지 않아요. 다시 열어 같은 칸을 열면 적던 글이 그대로 이어져요 (필요 없으면 '버리기'를 눌러 주세요)",
@@ -366,7 +374,12 @@ const NF = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 10 });
 function fmt(x) {
   if (x == null || !isFinite(x)) return '–';
   const a = Math.abs(x);
-  if (a !== 0 && (a >= 1e16 || a < 1e-10)) return x.toExponential(5).replace(/\.?0+e/, 'e').replace('e+', 'e');
+  if (a !== 0 && (a >= 1e16 || a < 1e-10)) { /* 아주 크거나 작은 수: 1e45 대신 '9.99999 × 10⁴⁵'처럼 보여 줘요 */
+    const m = x.toExponential(5).match(/^(-?[\d.]+)e([+-]\d+)$/);
+    if (!m) return String(x);
+    const sup = String(+m[2]).replace(/[-\d]/g, c => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]);
+    return m[1].replace(/\.?0+$/, '').replace(/^-/, '−') + ' × 10' + sup;
+  }
   return NF.format(x).replace(/^-/, '−');
 }
 function fmtMoney(x, d) {
@@ -511,7 +524,7 @@ const BUILTIN = [
   { id: 'b-unit', name: '100g당 가격', f: '가격 ÷ 용량 × 100', vals: { '용량': 500 }, chip: '100g당 ({용량}g)', pin: false, note: 'ml로 넣어도 똑같이 계산돼요' },
   { id: 'b-tip', name: '팁 포함', f: '금액 × (1 + 팁 ÷ 100)', vals: { '팁': 15 }, chip: '팁 {팁}%', pin: false },
   { id: 'b-int', dp: 0, name: '예금 이자', f: '원금 × 연이율 ÷ 100 × 개월 ÷ 12 × 0.846', vals: { '연이율': 3, '개월': 12 }, chip: '이자 {연이율}% {개월}개월', pin: false, note: '단리, 이자소득세 15.4%를 뺀 금액' },
-  { id: 'b-fuel', dp: 0, name: '주유하면 몇 km 늘어날까', f: '금액 ÷ 기름값 × 연비', vals: { '기름값': 1790, '연비': 13.6 }, chip: '⛽ 주유하면 몇 km', pin: true, note: '기름값(휘발유 1L 가격)과 넣을 금액을 넣으면 계기판 거리가 몇 km 늘어날지 나와요. 기름값·연비는 한 번 고치면 기억해요' },
+  { id: 'b-fuel', dp: 0, name: '주유하면 몇 km 늘어날까', f: '금액 ÷ 기름값 × 연비', vals: { '기름값': 1790, '연비': 13.6 }, chip: '⛽ 주유하면 몇 km', pin: true, note: '주유할 금액과 기름값(1L 가격)을 넣으면 계기판 거리가 몇 km 늘어날지 나와요. 기름값·연비는 한 번 고치면 기억해요' },
   { id: 'b-fuel2', dp: 0, name: '갈 거리 → 주유 금액', f: '거리 ÷ 연비 × 기름값', order: ['거리', '기름값', '연비'], vals: { '기름값': 1790, '연비': 13.6 }, chip: '⛽ 얼마 넣지', pin: false, note: '갈 거리(km)를 넣으면 넣어야 할 금액(원)이 나와요' },
   { id: 'b-eff', dp: 1, name: '계기판으로 연비 구하기', f: '(주유후 − 주유전) ÷ (금액 ÷ 기름값)', order: ['주유전', '주유후', '금액', '기름값'], vals: { '기름값': 1790 }, pin: false, note: '주유 전·후 계기판의 갈 수 있는 거리(km)와 넣은 금액을 넣으면 연비(km/L)가 나와요. 구한 연비는 주유 계산에 저절로 들어가요' }
 ];
@@ -590,6 +603,12 @@ function defaults() {
   };
 }
 const HIST_MAX = 200;
+const PRESET_MAX = 500; /* 계산식은 500개까지 (넘게 넣으려 하면 알려 드려요. 불러올 때 잘라 내 지워지는 일이 없게) */
+function presetRoom(n) {
+  if (S.presets.length + (n || 1) <= PRESET_MAX) return true;
+  toast(`계산식은 ${PRESET_MAX}개까지 저장할 수 있어요. 안 쓰는 계산식을 지운 뒤 넣어 주세요`);
+  return false;
+}
 function load() {
   const o = defaults();
   let s = null;
@@ -612,7 +631,7 @@ function load() {
     }
     if (s.cx && hasOwn(CUR, s.cx.from) && hasOwn(CUR, s.cx.to)) o.cx = { on: s.cx.on !== false, from: s.cx.from, to: s.cx.to };
     if (s.rates && s.rates.r && s.rates.r.KRW > 0 && s.rates.r.USD > 0 && s.rates.at >= o.rates.at) o.rates = s.rates;
-    if (Array.isArray(s.presets)) o.presets = s.presets.filter(p => p && typeof p.f === 'string' && typeof p.name === 'string' && typeof p.id === 'string').slice(0, 100);
+    if (Array.isArray(s.presets)) o.presets = s.presets.filter(p => p && typeof p.f === 'string' && typeof p.name === 'string' && typeof p.id === 'string').slice(0, PRESET_MAX);
     if (s.learned && typeof s.learned === 'object') o.learned = s.learned;
     if (Array.isArray(s.hist)) o.hist = s.hist.filter(h => h && typeof h.r === 'number').slice(-HIST_MAX);
     if (Array.isArray(s.fxHist)) o.fxHist = s.fxHist.filter(h => h && typeof h.a === 'number' && isFinite(h.a) && hasOwn(CUR, h.c)).slice(0, 12);
@@ -620,7 +639,7 @@ function load() {
     o.presets.forEach(p => { if (p.id === 'b-py' && p.name === '평 → ㎡') p.name = '평 → 제곱미터'; if (p.id === 'b-m2' && p.name === '㎡ → 평') p.name = '제곱미터 → 평'; });
     if (typeof s.upd === 'number') o.upd = s.upd;
     /* 새로 생긴 기본 계산식(주유)은 기존 사용자에게 한 번만 넣어요. 지운 뒤엔 다시 넣지 않아요 */
-    if (!(s.bi >= 2) && o.presets.length < 100) BUILTIN.forEach(b => { if (FUEL_IDS.includes(b.id) && !o.presets.find(p => p.id === b.id)) o.presets.push(clone(b)); });
+    if (!(s.bi >= 2) && o.presets.length < PRESET_MAX) BUILTIN.forEach(b => { if (FUEL_IDS.includes(b.id) && !o.presets.find(p => p.id === b.id)) o.presets.push(clone(b)); });
     if (o.calc.expr === '38700' && o.calc.prev && o.calc.prev.e === '12900*3') o.calc = { expr: '', done: false, prev: null };
     if (o.fx.expr === '100' && o.fx.done && o.fx.active === 'USD') { o.fx.expr = ''; o.fx.done = false; }
   } catch (e) { return defaults(); }
@@ -653,7 +672,7 @@ const el = {
   pad: $('#pad'), strip: $('#strip'), keys: $('#keys'), tabs: $('#tabs'), ver: $('#ver'),
   toast: $('#toast'), sheetWrap: $('#sheetWrap'), sheet: $('#sheet')
 };
-el.ver.textContent = APP.label;
+el.ver.innerHTML = '<span>' + esc(APP.label) + '</span>';
 
 /* ───── 환율 도우미 ───── */
 const curDec = c => (hasOwn(CUR, c) ? CUR[c][2] : 2);
@@ -786,7 +805,7 @@ function learn(s) {
 }
 
 /* ───── 프리셋 ───── */
-const varLabel = v => (v === '□' ? '값' : v);
+const varLabel = v => (v === '□' ? '값' : v === '주유후' ? '주유 후' : v === '주유전' ? '주유 전' : v);
 function presetInfo(p) {
   try {
     let vars = compile(p.f).vars.slice();
@@ -841,6 +860,7 @@ function chipTap(btn) {
 }
 
 function keepLearned(k) {
+  if (!presetRoom()) return;
   S.presets.push({ id: 'u' + Date.now().toString(36), name: prettyExpr(k), f: prettyFormula('□' + k), vals: {}, pin: true });
   if (S.learned[k]) S.learned[k].hide = true;
   changed();
@@ -950,7 +970,9 @@ function renderHist() {
   if (sig === histSig) return;
   histSig = sig;
   if (!H.length) {
-    el.histIn.innerHTML = '<div class="tips"><b>이렇게 쓰면 편해요</b><span>아래 칩을 누르면 부가세·할인·N빵이 바로 계산돼요</span><span>식 속 숫자를 누르면 그 숫자만 고칠 수 있어요</span><span>같은 계산을 3번 하거나 기록을 길게 누르면 자주 쓰는 계산이 돼요</span><span>결과 숫자를 누르면 복사, ⌫를 길게 누르면 모두 지우기</span><button class="tryex" type="button" data-act="demo">예시로 둘러보기</button></div>';
+    el.histIn.innerHTML = '<div class="tips"><b>이렇게 쓰면 편해요</b><span>아래 칩을 누르면 부가세·할인·N빵이 바로 계산돼요</span><span>식 속 숫자를 누르면 그 숫자만 고칠 수 있어요</span><span>같은 계산을 3번 하거나 기록을 길게 누르면 계산식으로 저장돼요</span><span>결과 숫자를 누르면 복사, ⌫를 길게 누르면 모두 지우기</span><button class="tryex" type="button" data-act="demo">예시로 둘러보기</button></div>';
+    const toEnd = () => { if (!S.hist.length) el.hist.scrollTop = el.hist.scrollHeight; }; /* 작은 화면에서도 '예시로 둘러보기' 버튼이 보이게 (화면 배치가 끝난 뒤) */
+    toEnd(); requestAnimationFrame(() => requestAnimationFrame(toEnd)); setTimeout(toEnd, 400);
     return;
   }
   const off = S.hist.length - H.length;
@@ -983,7 +1005,7 @@ function renderStrip() {
   const pins = S.presets.filter(p => p.pin);
   const parts = autos.map(k => `<button class="chip auto" type="button" data-auto="${esc(k)}"><i class="coin" aria-hidden="true"></i>${esc(prettyExpr(k))}</button>`)
     .concat(pins.map(p => `<button class="chip" type="button" data-pid="${esc(p.id)}">${esc(chipLabel(p))}</button>`));
-  parts.push(`<button class="chip more" type="button" data-more="1">${parts.length ? '고치기' : '계산식 넣기'}</button>`);
+  parts.push(`<button class="chip more" type="button" data-more="1">${parts.length ? '계산식 더 보기' : '계산식 넣기'}</button>`);
   const html = parts.join('');
   if (html !== stripSig) { stripSig = html; el.strip.innerHTML = html; }
   stripMore();
@@ -999,7 +1021,9 @@ function renderFxStatus() {
   const d = new Date(S.rates.at), p2 = n => String(n).padStart(2, '0');
   const when = `${d.getMonth() + 1}월 ${d.getDate()}일 ${p2(d.getHours())}:${p2(d.getMinutes())} 기준`;
   const fresh = S.rates.got && Date.now() - S.rates.got < 864e5;
-  el.fxstatus.innerHTML = `<i class="dot${fresh ? ' live' : ''}" aria-hidden="true"></i>${fxBusy ? '최신 환율 받는 중…' : when + (fresh ? ' · 자동 업데이트' : APP.preview ? ' · 미리보기용 저장 환율' : ' · 저장된 환율')}`;
+  const days = Math.floor((Date.now() - S.rates.at) / 864e5), old = !fxBusy && !fresh && days >= 3;
+  el.fxstatus.classList.toggle('old', old);
+  el.fxstatus.innerHTML = `<i class="dot${fresh ? ' live' : ''}" aria-hidden="true"></i>${fxBusy ? '최신 환율 받는 중…' : old ? `환율이 ${days}일 전 값이에요 · 새로 받기를 눌러 주세요` : when + (fresh ? ' · 자동 업데이트' : APP.preview ? ' · 미리보기용 저장 환율' : ' · 저장된 환율')}`;
   el.fxRefresh.classList.toggle('spin', fxBusy);
 }
 
@@ -1031,7 +1055,7 @@ function renderFX() {
     const sz = len > 17 ? ' s' : len > 12 ? ' m' : '';
     const rate = c === 'KRW' ? '' : `<span class="rate">${info[3]} ${c} = ${money(conv(info[3], c, 'KRW'), 'KRW')}원</span>`;
     return `<li class="fxrow${on ? ' on' : ''}" data-code="${c}" role="button" tabindex="0" aria-label="${info[0]}${on ? ' 입력 중' : ''}"><span class="flag" aria-hidden="true">${info[1]}</span><span class="cinfo"><span class="code">${c}</span><span class="cname">${info[0]}</span></span><span class="cval"><span class="amt${sz}">${amt}</span>${rate}</span></li>`;
-  }).join('') + `<li class="fxfoot">${S.fxHist.length ? `<p class="sect" style="margin:6px 0 2px">최근 환산<small>누르면 그 금액으로 다시 계산해요</small></p><div class="fxrecent">${S.fxHist.map((h, i) => `<button class="chip" type="button" data-fh="${i}">${CUR[h.c][1]} ${esc(money(h.a, h.c))} ${h.c === 'KRW' ? '원' : h.c}</button>`).join('')}</div>` : ''}<button class="addcur" type="button" data-act="cur">${ICON.plus}통화 추가·빼기</button><p class="credit">${credit} · 하루 한 번 바뀌는 기준 환율이라, 은행에서 실제로 바꿀 땐 수수료만큼 차이가 나요.</p></li>`;
+  }).join('') + `<li class="fxfoot">${S.fxHist.length ? `<p class="sect" style="margin:6px 0 2px">최근 환산<button class="hclear" type="button" data-act="fhclear">지우기</button></p><p class="hint" style="margin:0 0 4px">누르면 그 금액으로 다시 계산해요</p><div class="fxrecent">${S.fxHist.map((h, i) => `<button class="chip" type="button" data-fh="${i}">${CUR[h.c][1]} ${esc(money(h.a, h.c))} ${h.c === 'KRW' ? '원' : h.c}</button>`).join('')}</div>` : ''}<button class="addcur" type="button" data-act="cur">${ICON.plus}통화 추가·빼기</button><p class="credit">${credit} · 하루 한 번 바뀌는 기준 환율이라, 은행에서 실제로 바꿀 땐 수수료만큼 차이가 나요.</p></li>`;
   el.fxlist.scrollTop = sc;
 }
 
@@ -1230,6 +1254,7 @@ function sheetPresetEdit(p, seed) {
       const vals = {};
       vars.slice(1).forEach(v => { if (typeof dv[v] === 'number') vals[v] = dv[v]; });
       const name = (nIn.value.trim() || prettyFormula(f)).slice(0, 24);
+      if (!p && !presetRoom()) return;
       if (p) {
         if (p.f !== f) { delete p.chip; delete p.order; delete p.note; }
         p.f = f; p.name = name; p.vals = vals;
@@ -1268,11 +1293,11 @@ function sheetPack(k) {
       all.disabled = !left;
       all.textContent = left ? `${left}개 모두 넣기` : '모두 넣었어요';
     };
-    const add = it => { if (!has(it)) S.presets.push(Object.assign(clone(it), { pin: false })); };
+    const add = it => { if (!has(it) && presetRoom()) S.presets.push(Object.assign(clone(it), { pin: false })); };
     sh.addEventListener('click', e => {
       const b = e.target.closest('[data-add]');
       if (b) { add(k.items.find(i => i.id === b.dataset.add)); changed(); draw(); return toast('넣었어요 · ★를 켜면 칩에 나와요'); }
-      if (e.target.closest('[data-act="pkall"]')) { k.items.forEach(add); changed(); draw(); toast(`${k.name} 묶음을 넣었어요`); }
+      if (e.target.closest('[data-act="pkall"]')) { if (!presetRoom(k.items.filter(i => !has(i)).length)) return; k.items.forEach(add); changed(); draw(); toast(`${k.name} 묶음을 넣었어요`); }
     });
     draw();
   });
@@ -1351,7 +1376,7 @@ function sheetImport(pre) {
   openSheet(`<div class="grab"></div>
     <div class="shead"><div><h2>공유받은 계산식 넣기</h2><p class="hint">받은 메시지를 통째로 붙여 넣어도 돼요.</p></div>${CLOSE}</div>
     <label class="lbl" for="imT">받은 링크</label>
-    <textarea class="ta" id="imT" spellcheck="false" autocomplete="off" placeholder="여기에 붙여넣기">${esc(pre || '')}</textarea>
+    <textarea class="ta" id="imT" spellcheck="false" autocomplete="off" placeholder="여기에 붙여 넣기">${esc(pre || '')}</textarea>
     <div id="imP"></div>
     <div class="btns"><button class="btn pri" type="button" data-act="imadd" disabled>넣기</button></div>`, sh => {
     const ta = $('#imT', sh), box = $('#imP', sh), btn = $('[data-act="imadd"]', sh);
@@ -1370,6 +1395,7 @@ function sheetImport(pre) {
       if (!got) return;
       closeSheet();
       if (S.presets.some(p => p.f === got.f && p.name === got.name)) return toast('이미 있는 계산식이에요');
+      if (!presetRoom()) return;
       S.presets.push(got);
       changed();
       toast(`‘${got.name}’${eul(got.name)} 넣었어요 · 계산기 칩에 나와요`);
@@ -1380,7 +1406,7 @@ function sheetImport(pre) {
 }
 /* 앱(APK)에서 공유 링크로 열렸을 때 부르는 입구 */
 window.ddImportPreset = code => sheetImport(String(code || ''));
-/* 웹 버전: 공유 링크 페이지에서 app.html#p=코드 로 넘어오면 바로 넣기 창 */
+/* 웹 버전: 공유 링크 페이지(p.html#코드)가 app/#p=코드 로 넘겨 주면 바로 넣기 창 */
 setTimeout(() => { try { const h = location.hash; if (/^#p=[A-Za-z0-9_-]{8,}$/.test(h)) { sheetImport(h.slice(3)); history.replaceState(null, '', location.pathname); } } catch (e) { /* 무시 */ } }, 300);
 
 function sheetCx() {
@@ -1525,6 +1551,7 @@ function viewApply() {
   const r = document.documentElement;
   if (VIEW.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', VIEW.theme);
   document.body.style.zoom = VIEW.size === 1 ? '' : String(VIEW.size);
+  r.setAttribute('data-size', String(VIEW.size));
 }
 function viewHTML() {
   const b = (k, v, t) => `<button class="chip" type="button" data-vk="${k}" data-vv="${v}" aria-pressed="${String(VIEW[k]) === String(v)}">${t}</button>`;
@@ -1625,7 +1652,7 @@ function bkOpen() {
   BK.pending = null; BK.locked = null;
   if (NATIVE && NATIVE.backupOpen) { bkSet('백업 파일을 골라 주세요', true); NATIVE.backupOpen(); return; }
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,text/plain,application/octet-stream,.json'; inp.hidden = true; document.body.appendChild(inp);
-  inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (!f) return; if (f.size > 20 * 1024 * 1024) { bkSet('파일이 너무 커요. 가늠 백업 파일을 골라 주세요.'); return; } const r = new FileReader(); r.onload = () => bkOpened(String(r.result)); r.onerror = () => bkOpened(null); r.readAsText(f); });
+  inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (!f) return; if (f.size > 5 * 1024 * 1024) { bkSet('파일이 너무 커요(5MB까지). 가늠 백업 파일을 골라 주세요.'); return; } const r = new FileReader(); r.onload = () => bkOpened(String(r.result)); r.onerror = () => bkOpened(null); r.readAsText(f); });
   inp.click();
 }
 function bkOpened(text) {
@@ -1880,6 +1907,16 @@ el.vCalc.addEventListener('click', e => {
 });
 el.fxlist.addEventListener('click', e => {
   if (e.target.closest('[data-act="cur"]')) return sheetCurrencies();
+  const fc = e.target.closest('[data-act="fhclear"]');
+  if (fc) {
+    if (!fc.classList.contains('armed')) {
+      fc.classList.add('armed'); fc.textContent = '한 번 더 누르면 지워요';
+      setTimeout(() => { if (fc.isConnected) { fc.classList.remove('armed'); fc.textContent = '지우기'; } }, 3000);
+      return;
+    }
+    const keep = S.fxHist.slice(); S.fxHist = []; changed();
+    return toast('최근 환산을 지웠어요', ['되돌리기', () => { S.fxHist = keep; changed(); }]);
+  }
   const fh = e.target.closest('[data-fh]');
   if (fh) {
     const h = S.fxHist[+fh.dataset.fh]; if (!h) return;
@@ -1938,8 +1975,9 @@ function askLeave(box, doClose) {
   var cands = [];
   Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) {
     var t = (b.textContent || '').replace(/\s+/g, ' ').trim();
-    if (!b.disabled && b.offsetWidth >= box.offsetWidth * 0.4 && /^(저장|저장하기|등록|등록하기|추가|추가하기|넣기|만들기|고치기)$/.test(t)) cands.push(b); // 아래쪽 큰 버튼만
+    if (!b.disabled && b.offsetWidth >= box.offsetWidth * 0.4 && (b.hasAttribute('data-save') || (t.length <= 14 && /(저장|등록|추가|넣기|만들기|고치기)/.test(t)))) cands.push(b); // 아래쪽 큰 저장 버튼 ('번역해서 넣기'처럼 앞에 말이 붙어도 찾아요)
   });
+  var marked = cands.filter(function (b) { return b.hasAttribute('data-save'); }); if (marked.length === 1) cands = marked;
   var save = cands.length === 1 ? cands[0] : null; // 큰 저장 버튼이 딱 하나일 때만 (헷갈리면 묻지 않고 닫아요)
   if (!save) { doClose(); return; } // 저장 버튼이 없는 창(설정 등)은 바로 저장되니 묻지 않아요
   var auto = false; try { auto = localStorage.getItem('leave-auto-save') === '1'; } catch (e) { /* 무시 */ }
