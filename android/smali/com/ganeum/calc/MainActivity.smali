@@ -126,6 +126,10 @@
 
     check-cast p0, Ljava/net/HttpURLConnection;
 
+    const/4 v0, 0x0
+
+    invoke-virtual {p0, v0}, Ljava/net/HttpURLConnection;->setInstanceFollowRedirects(Z)V
+
     const/16 v0, 0x1f40
 
     invoke-virtual {p0, v0}, Ljava/net/URLConnection;->setConnectTimeout(I)V
