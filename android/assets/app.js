@@ -14,6 +14,11 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.21', d: '2026.11.26', items: [
+    "⬇️ 새 버전을 앱 안에서 바로 받아요. 버전 정보 창에서 '업데이트 받기'를 누르면 받는 정도(%)가 보이고, 다 받으면 설치 화면이 열려요. 받은 파일은 앱을 다시 열 때 저절로 지워져서 폰에 쌓이지 않아요",
+    '🔒 받은 파일이 가늠에서 만든 진짜 새 버전인지 확인한 뒤에만 설치해요',
+    '💾 백업 파일이 너무 크면(5MB 넘음) 그냥 멈추지 않고 파일 크기와 함께 알려 드려요'
+  ] },
   { v: 'v1.20', d: '2026.11.26', items: [
     '🛟 계산식을 100개 넘게 저장하면 다시 열 때 101번째부터 사라지던 문제를 고쳤어요. 이제 500개까지 저장되고, 꽉 차면 미리 알려 드려요',
     '🔗 공유한 계산식 링크가 열리지 않던 문제를 고쳤어요. 앱이 있으면 앱에서, 아이폰은 웹에서 바로 열려요',
@@ -1478,8 +1483,44 @@ function paintVer() {
 }
 window.onLatest = (v, cur) => { LATEST.v = +v || 0; LATEST.cur = +cur || LATEST.cur; LATEST.checking = false; LATEST.failed = false; LATEST.at = Date.now(); paintVer(); };
 window.onLatestFail = () => { LATEST.checking = false; LATEST.failed = true; paintVer(); };
+/* 앱 안에서 새 버전 받기 (안드로이드 앱): 받는 중 % → 검사 → 설치 화면. 안 되면 브라우저로 받기 */
+const INAPP = !!(NATIVE && NATIVE.installUpdate);
+const UPD = { st: '', n: -1, why: '' };
+const UPD_KEY = 'ganeum-upd-wait';
+const UPD_WHY = {
+  net: '인터넷 연결을 확인하고 다시 해 주세요.',
+  size: '파일이 예상보다 커서 받기를 멈췄어요.',
+  bad: '받은 파일이 망가졌어요. 다시 받아 주세요.',
+  pkg: '가늠 앱 파일이 아니라서 설치하지 않았어요.',
+  sign: '가늠에서 만든 파일인지 확인되지 않아 설치하지 않았어요.',
+  old: '받은 파일이 지금 쓰는 버전과 같거나 더 예전 버전이에요.',
+  none: '새 버전 파일을 찾지 못했어요.',
+  open: '설치 화면을 열지 못했어요.'
+};
+function updWait(on) { try { if (on) localStorage.setItem(UPD_KEY, String(Date.now())); else localStorage.removeItem(UPD_KEY); } catch (e) { /* 무시 */ } }
+function updGet() {
+  if (!INAPP) { try { NATIVE.openUpdate(); } catch (e) { /* 무시 */ } return; }
+  if (UPD.st === 'dl') return;
+  UPD.st = 'dl'; UPD.n = -1; UPD.why = ''; updPaint();
+  try { NATIVE.installUpdate(); } catch (e) { UPD.st = 'fail'; UPD.why = 'open'; updPaint(); }
+}
+window.AppInfo = Object.assign(window.AppInfo || {}, {
+  updState: (st, v) => {
+    UPD.st = String(st || ''); UPD.n = UPD.st === 'dl' ? Math.max(-1, Math.min(100, Math.round(+v))) : -1; UPD.why = UPD.st === 'fail' ? String(v || '') : '';
+    if (isNaN(UPD.n)) UPD.n = -1;
+    updWait(UPD.st === 'perm');
+    updPaint();
+  },
+  /* 앱을 켤 때 뜨는 '새 버전이 나왔어요' 알림에서 '업데이트'를 누름 */
+  updStart: () => { if (!sheetOpen) sheetVersion(); updGet(); }
+});
 function updText() {
   if (APP.preview) return '미리보기에서는 새 버전을 확인하지 않아요. 앱에서는 자동으로 확인해요.';
+  if (INAPP && UPD.st === 'dl') return (UPD.n >= 0 ? `새 버전 받는 중 <b>${UPD.n}%</b>` : '새 버전 받는 중이에요…') + `<span class="upbar" aria-hidden="true"><i style="width:${Math.max(0, UPD.n)}%"></i></span>`;
+  if (INAPP && UPD.st === 'ok') return "다 받았어요. 열린 설치 화면에서 '업데이트'를 눌러 주세요. 계산 기록과 계산식은 그대로 남아요.";
+  if (INAPP && UPD.st === 'perm') return "처음 한 번만 설치 허용이 필요해요. 열린 설정 화면에서 '이 출처 허용'을 켜고 돌아오면 이어서 설치해요.";
+  if (INAPP && UPD.st === 'permno') return "설치 허용이 꺼져 있어서 설치하지 못했어요. '이 출처 허용'을 켜고 다시 해 보거나 브라우저로 받아 주세요.";
+  if (INAPP && UPD.st === 'fail') return '새 버전을 받지 못했어요. ' + (UPD_WHY[UPD.why] || UPD_WHY.net);
   if (LATEST.checking) return '새 버전을 확인하는 중이에요…';
   if (hasNew()) return `새 버전(<b class="upv">v1.${LATEST.v}</b>)이 나왔어요.${APP.web ? ' 아래 버튼을 누르면 새 버전으로 바뀌어요.' : ''}`;
   if (LATEST.failed && !LATEST.v) return '새 버전을 확인하지 못했어요. 인터넷 연결을 확인해 주세요.';
@@ -1489,8 +1530,14 @@ function updPaint() {
   if (!sheetOpen) return;
   const m = $('#updMsg', el.sheet), row = $('#updRow', el.sheet);
   if (m) m.innerHTML = updText();
-  if (row) row.innerHTML = APP.preview ? '' : (hasNew() ? `<button class="btn main" type="button" data-upd="get">${APP.web ? '새 버전으로 바꾸기' : '업데이트 받기'}</button>` : '')
-    + `<button class="btn sec" type="button" data-upd="check"${LATEST.checking ? ' disabled' : ''}>새 버전 확인</button>`;
+  if (!row) return;
+  const B = (k, t, main, dis) => `<button class="btn ${main ? 'main' : 'sec'}" type="button" data-upd="${k}"${dis ? ' disabled' : ''}>${t}</button>`;
+  if (APP.preview) row.innerHTML = '';
+  else if (INAPP && UPD.st === 'dl') row.innerHTML = B('get', '받는 중…', true, true);
+  else if (INAPP && UPD.st === 'ok') row.innerHTML = B('get', '설치 화면 다시 열기', true);
+  else if (INAPP && UPD.st === 'perm') row.innerHTML = B('get', '설치 허용 켜러 가기', true);
+  else if (INAPP && (UPD.st === 'permno' || UPD.st === 'fail')) row.innerHTML = B('get', '다시 해 보기', true) + B('web', '브라우저로 받기');
+  else row.innerHTML = (hasNew() ? B('get', APP.web ? '새 버전으로 바꾸기' : '업데이트 받기', true) : '') + B('check', '새 버전 확인', false, LATEST.checking);
 }
 function checkLatest() {
   if (APP.preview || LATEST.checking) return;
@@ -1531,12 +1578,13 @@ function sheetVersion() {
     <p class="lbl">업데이트 내용</p>
     <ul class="notes">${NOTES.map(n => `<li><b>${esc(n.v)}</b><span>${esc(n.d)}</span><ul>${n.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></li>`).join('')}</ul>
     <p class="lbl">개인정보</p>
-    <p class="hint">계산 기록과 계산식은 ${NATIVE ? '이 폰' : '이 브라우저'}에만 저장돼요. 백업 파일은 내가 고른 곳에만 저장되고 인터넷으로 보내지 않아요. 인터넷은 환율을 받고 새 버전을 확인할 때만 쓰고, 내 정보는 보내지 않아요.</p></div>`, sh => {
+    <p class="hint">계산 기록과 계산식은 ${NATIVE ? '이 폰' : '이 브라우저'}에만 저장돼요. 백업 파일은 내가 고른 곳에만 저장되고 인터넷으로 보내지 않아요. 인터넷은 환율을 받고 새 버전을 확인하고 받을 때만 쓰고, 내 정보는 보내지 않아요.</p></div>`, sh => {
     bkMount(sh); viewMount(sh); updPaint();
     $('#updRow', sh).addEventListener('click', e => {
       const b = e.target.closest('[data-upd]'); if (!b) return;
       if (b.dataset.upd === 'check') return checkLatest();
-      if (NATIVE) { try { NATIVE.openUpdate(); } catch (er) { /* 무시 */ } }
+      if (b.dataset.upd === 'web') { try { NATIVE.updateInBrowser ? NATIVE.updateInBrowser() : NATIVE.openUpdate(); } catch (er) { /* 무시 */ } return; }
+      if (NATIVE) updGet();
       else { try { location.reload(); } catch (er) { /* 무시 */ } }
     });
     if (!APP.preview && !LATEST.checking && (NATIVE ? !LATEST.v : Date.now() - LATEST.at > 600e3)) checkLatest();
@@ -1652,8 +1700,15 @@ function bkOpen() {
   BK.pending = null; BK.locked = null;
   if (NATIVE && NATIVE.backupOpen) { bkSet('백업 파일을 골라 주세요', true); NATIVE.backupOpen(); return; }
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,text/plain,application/octet-stream,.json'; inp.hidden = true; document.body.appendChild(inp);
-  inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (!f) return; if (f.size > 5 * 1024 * 1024) { bkSet('파일이 너무 커요(5MB까지). 가늠 백업 파일을 골라 주세요.'); return; } const r = new FileReader(); r.onload = () => bkOpened(String(r.result)); r.onerror = () => bkOpened(null); r.readAsText(f); });
+  inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (!f) return; if (f.size > BK_MAX) { bkOpenFail('big', f.size); return; } const r = new FileReader(); r.onload = () => bkOpened(String(r.result)); r.onerror = () => bkOpenFail('read'); r.readAsText(f); });
   inp.click();
+}
+/* 백업 파일을 골랐는데 못 읽음: 너무 큼(크기 모르면 -1) · 읽기 실패. 고르기를 취소한 경우(bkOpened(null))와 구분 */
+const BK_MAX = 5 * 1024 * 1024;
+function bkOpenFail(kind, bytes) {
+  const b = +bytes || 0;
+  if (kind === 'big') bkSet(`백업 파일이 너무 커요${b > 0 ? ` (${(b / 1048576).toFixed(1)}MB)` : ''}. ${BK_MAX / 1048576}MB까지 불러올 수 있어요.`);
+  else bkSet('백업 파일을 읽지 못했어요. 다시 골라 주세요.');
 }
 function bkOpened(text) {
   if (text == null) { bkSet(''); return; }
@@ -1684,7 +1739,7 @@ function bkApply() {
   bkLock = true; bkSet('다 불러왔어요! 잠깐 뒤 다시 열려요.', true);
   setTimeout(() => { try { location.reload(); } catch (e) { /* 무시 */ } }, 700);
 }
-window.AppInfo = Object.assign(window.AppInfo || {}, { backupDone: (ok, why) => bkDone(!!ok, why), backupOpened: t => bkOpened(t) });
+window.AppInfo = Object.assign(window.AppInfo || {}, { backupDone: (ok, why) => bkDone(!!ok, why), backupOpened: t => bkOpened(t), backupOpenFail: (k, b) => bkOpenFail(k, b) });
 
 /* ───── 예시로 둘러보기: 저장하지 않는 예시 화면 (닫거나 다시 열면 원래대로) ───── */
 function demoOn() {
@@ -2030,6 +2085,7 @@ window.addEventListener('pagehide', flush);
 /* ───── 시작 ───── */
 render();
 setTimeout(() => { autoRefresh(); autoUpdateCheck(); if (S.tab === 'fx' || !S.tz) tzCurrency(); }, 400);
+if (INAPP) { let w = 0; try { w = +localStorage.getItem(UPD_KEY) || 0; } catch (e) { /* 무시 */ } updWait(false); if (w && Date.now() - w < 600e3) setTimeout(() => window.AppInfo.updStart(), 700); }
 })();
 /* DRAFTKEEP v1 — 적던 글 남겨 두기: 앱이 꺼져도 적던 글을 폰 안에만 남겨 두었다가, 같은 칸을 다시 열면 이어서 써요 */
 (function () {
