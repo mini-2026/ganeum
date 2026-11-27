@@ -14,6 +14,9 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.25', d: '2026.11.27', items: [
+    "🌍 나라나 도시 이름으로 찾으면 그 나라 통화가 나와요 (예: 핀란드 → 유로, 다낭 → 베트남 동)"
+  ] },
   { v: 'v1.24', d: '2026.11.27', items: [
     "🔎 찾는 통화가 없으면 안내가 나와요",
     "👓 글자를 크게 해도 찾기 칸과 환율 버튼이 잘 보이게 다듬었어요"
@@ -483,6 +486,17 @@ const CUR = {
   KZT: ['카자흐스탄 텡게', '🇰🇿', 2, 1], NPR: ['네팔 루피', '🇳🇵', 2, 1], LKR: ['스리랑카 루피', '🇱🇰', 2, 1], MMK: ['미얀마 짯', '🇲🇲', 0, 1], ILS: ['이스라엘 셰켈', '🇮🇱', 2, 1],
   SAR: ['사우디 리얄', '🇸🇦', 2, 1], QAR: ['카타르 리얄', '🇶🇦', 2, 1], EGP: ['이집트 파운드', '🇪🇬', 2, 1], ZAR: ['남아공 랜드', '🇿🇦', 2, 1], CLP: ['칠레 페소', '🇨🇱', 0, 1],
   ARS: ['아르헨티나 페소', '🇦🇷', 2, 1], PEN: ['페루 솔', '🇵🇪', 2, 1], COP: ['콜롬비아 페소', '🇨🇴', 0, 1], ISK: ['아이슬란드 크로나', '🇮🇸', 0, 1]
+};
+/* 나라·도시 이름으로 통화 찾기 (통화 이름에 나라가 없거나 여러 나라가 같이 쓰는 통화) */
+const CUR_LAND = {
+  EUR: '유럽 핀란드 독일 프랑스 이탈리아 스페인 네덜란드 벨기에 오스트리아 포르투갈 그리스 아일랜드 룩셈부르크 모나코 슬로바키아 슬로베니아 에스토니아 라트비아 리투아니아 몰타 크로아티아 키프로스 불가리아 바티칸 산마리노 안도라 몬테네그로 코소보 파리 로마 바르셀로나 헬싱키',
+  USD: '미국 하와이 괌 사이판 에콰도르 엘살바도르 파나마 푸에르토리코 동티모르 뉴욕',
+  KRW: '한국 대한민국', JPY: '일본 도쿄 오사카 교토 후쿠오카 삿포로 오키나와', CNY: '중국 상하이 베이징 칭다오',
+  VND: '베트남 다낭 하노이 호치민 나트랑 푸꾸옥', THB: '태국 방콕 푸켓 치앙마이 파타야', PHP: '필리핀 세부 보라카이 마닐라 보홀',
+  IDR: '인도네시아 발리 자카르타', MYR: '말레이시아 코타키나발루 쿠알라룸푸르', SGD: '싱가포르', HKD: '홍콩', TWD: '대만 타이베이 가오슝',
+  GBP: '영국 잉글랜드 스코틀랜드 런던', CHF: '스위스 리히텐슈타인', AUD: '호주 시드니', NZD: '뉴질랜드', CAD: '캐나다 밴쿠버',
+  AED: '아랍에미리트 두바이 아부다비', TRY: '튀르키예 터키 이스탄불', ZAR: '남아프리카공화국', SAR: '사우디아라비아', DKK: '덴마크 그린란드',
+  CZK: '체코 프라하', HUF: '헝가리 부다페스트', MOP: '마카오', LAK: '라오스 비엔티안', KHR: '캄보디아 씨엠립', MNT: '몽골 울란바토르'
 };
 /* 인터넷이 없을 때 쓰는 저장 환율 (1달러 기준, 2026-10-30 09:02 KST) */
 const RATE_SNAPSHOT = { at: 1793318551000, src: 'er', r: {
@@ -1461,8 +1475,13 @@ function sheetCurrencies() {
       const t = q.value.trim();
       let n = 0;
       sh.querySelectorAll('#curList li').forEach(li => {
-        const c = li.firstElementChild.dataset.code;
-        li.hidden = !qMatch(t, c + ' ' + CUR[c][0]);
+        const c = li.firstElementChild.dataset.code, nm = li.querySelector('.cname');
+        const lands = (CUR_LAND[c] || '').split(' ').filter(Boolean);
+        const byName = qMatch(t, c + ' ' + CUR[c][0]);
+        const hit = byName ? [] : lands.filter(l => qMatch(t, l));
+        li.hidden = !byName && !hit.length;
+        /* 나라 이름으로 찾았으면 어느 나라 통화인지 같이 보여 줘요 (예: 유로 · 핀란드) */
+        nm.textContent = CUR[c][0] + (hit.length ? ' · ' + hit.slice(0, 2).join(', ') : '');
         if (!li.hidden) n++;
       });
       none.hidden = n > 0;
