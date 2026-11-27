@@ -14,6 +14,10 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.24', d: '2026.11.27', items: [
+    "🔎 찾는 통화가 없으면 안내가 나와요",
+    "👓 글자를 크게 해도 찾기 칸과 환율 버튼이 잘 보이게 다듬었어요"
+  ] },
   { v: 'v1.23', d: '2026.11.26', items: [
     '🔤 계산식 묶음의 마일·갤런을 mi·gal로, 해외 단위 설명을 °F·mi·lb로 바꿨어요',
     "✏️ 저장한 뒤에는 '적던 글이 남아 있어요' 알림이 다시 뜨지 않아요"
@@ -982,7 +986,7 @@ function renderHist() {
   if (sig === histSig) return;
   histSig = sig;
   if (!H.length) {
-    el.histIn.innerHTML = '<div class="tips"><b>이렇게 쓰면 편해요</b><span>아래 칩을 누르면 부가세·할인·N빵이 바로 계산돼요</span><span>식 속 숫자를 누르면 그 숫자만 고칠 수 있어요</span><span>같은 계산을 3번 하거나 기록을 길게 누르면 계산식으로 저장돼요</span><span>결과 숫자를 누르면 복사, ⌫를 길게 누르면 모두 지우기</span><button class="tryex" type="button" data-act="demo">예시로 둘러보기</button></div>';
+    el.histIn.innerHTML = '<div class="tips"><b>이렇게 쓰면 편해요</b><span>아래 칩을 누르면 부가세·할인·N빵이 바로 계산돼요</span><span>식 속 숫자를 누르면 그 숫자만 고칠 수 있어요</span><span>같은 계산을 3번 하거나 기록을 길게 누르면 계산식으로 저장돼요</span><span>결과 숫자를 누르면 복사되고, ⌫를 길게 누르면 모두 지워져요</span><button class="tryex" type="button" data-act="demo">예시로 둘러보기</button></div>';
     const toEnd = () => { if (!S.hist.length) el.hist.scrollTop = el.hist.scrollHeight; }; /* 작은 화면에서도 '예시로 둘러보기' 버튼이 보이게 (화면 배치가 끝난 뒤) */
     toEnd(); requestAnimationFrame(() => requestAnimationFrame(toEnd)); setTimeout(toEnd, 400);
     return;
@@ -1451,14 +1455,18 @@ function sheetCurrencies() {
   openSheet(`<div class="grab"></div>
     <div class="shead"><h2>통화 고르기</h2>${CLOSE}</div>
     <input class="inp txt" id="curQ" type="search" placeholder="나라나 통화 찾기 (예: 베트남, VND)" autocomplete="off">
-    <ul class="curlist" id="curList">${codes.map(c => `<li><button class="curitem" type="button" data-code="${c}" aria-pressed="${S.fx.list.includes(c)}"><span class="flag" aria-hidden="true">${CUR[c][1]}</span><span class="code">${c}</span><span class="cname">${CUR[c][0]}</span><span class="ck">${ICON.check}</span></button></li>`).join('')}</ul>`, sh => {
-    const q = $('#curQ', sh);
+    <ul class="curlist" id="curList">${codes.map(c => `<li><button class="curitem" type="button" data-code="${c}" aria-pressed="${S.fx.list.includes(c)}"><span class="flag" aria-hidden="true">${CUR[c][1]}</span><span class="code">${c}</span><span class="cname">${CUR[c][0]}</span><span class="ck">${ICON.check}</span></button></li>`).join('')}</ul><p class="qnone" id="curNone" hidden></p>`, sh => {
+    const q = $('#curQ', sh), none = $('#curNone', sh);
     q.addEventListener('input', () => {
       const t = q.value.trim();
+      let n = 0;
       sh.querySelectorAll('#curList li').forEach(li => {
         const c = li.firstElementChild.dataset.code;
         li.hidden = !qMatch(t, c + ' ' + CUR[c][0]);
+        if (!li.hidden) n++;
       });
+      none.hidden = n > 0;
+      if (!n) none.textContent = `‘${t}’${eul(t)} 찾지 못했어요. 나라 이름이나 통화 코드(예: USD)로 찾아 보세요.`;
     });
     $('#curList', sh).addEventListener('click', e => {
       const b = e.target.closest('[data-code]');
