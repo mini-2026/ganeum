@@ -14,8 +14,10 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin || !url.pathname.startsWith(new URL('./', location.href).pathname)) return;
+  const saved = () => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html'));
   e.respondWith(fetch(req).then(res => {
-    if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => { /* 무시 */ }); }
-    return res;
-  }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html'))));
+    if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => { /* 무시 */ }); return res; }
+    /* 사이트가 닫히거나 오류(404 등)면 저장분으로 열어요 */
+    return saved().then(r => r || res);
+  }).catch(() => saved()));
 });
