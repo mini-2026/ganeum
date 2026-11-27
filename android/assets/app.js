@@ -14,6 +14,9 @@ if (APP.web && 'serviceWorker' in navigator && window.isSecureContext && /\/gane
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* 무시 */ }); });
 }
 const NOTES = [
+  { v: 'v1.26', d: '2026.11.27', items: [
+    "💶 처음 보이는 통화를 원·달러·유로(핀란드 등)로 바꿨어요. 엔·위안은 '통화 추가·빼기'에서 넣을 수 있어요"
+  ] },
   { v: 'v1.25', d: '2026.11.27', items: [
     "🌍 나라나 도시 이름으로 찾으면 그 나라 통화가 나와요 (예: 핀란드 → 유로, 다낭 → 베트남 동)"
   ] },
@@ -626,7 +629,7 @@ function defaults() {
   return {
     v: 1, tab: 'calc',
     calc: { expr: '', done: false, prev: null },
-    fx: { list: ['KRW', 'USD', 'JPY', 'EUR', 'CNY'], active: 'USD', expr: '', done: false },
+    fx: { list: ['KRW', 'USD', 'EUR'], active: 'USD', expr: '', done: false },
     cx: { on: true, from: 'KRW', to: 'USD' },
     rates: { r: clone(RATE_SNAPSHOT.r), at: RATE_SNAPSHOT.at, src: RATE_SNAPSHOT.src, got: 0 },
     presets: clone(BUILTIN), learned: {}, hist: [], fxHist: [], tz: '', upd: 0, bi: 2
@@ -651,7 +654,9 @@ function load() {
       o.calc = { expr: s.calc.expr.slice(0, 120), done: !!s.calc.done, prev: pv && (typeof pv.e === 'string' || typeof pv.l === 'string') ? pv : null };
     }
     if (s.fx && Array.isArray(s.fx.list)) {
-      const list = s.fx.list.filter(c => hasOwn(CUR, c));
+      let list = s.fx.list.filter(c => hasOwn(CUR, c));
+      /* 예전 기본 목록을 그대로 쓰던 분은 새 기본 목록(원·달러·유로)으로 바꿔요 */
+      if (list.join() === 'KRW,USD,JPY,EUR,CNY') list = o.fx.list.slice();
       if (list.length) {
         o.fx.list = list;
         o.fx.active = list.includes(s.fx.active) ? s.fx.active : list[0];
